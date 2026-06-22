@@ -1,21 +1,44 @@
-const API_URL = "http://127.0.0.1:8000";
+const imageInput = document.getElementById("imageInput");
+const previewImage = document.getElementById("previewImage");
 
-async function runOCR() {
+imageInput.addEventListener("change", () => {
     const file = imageInput.files[0];
 
-    if (!file) return;
+    if(file){
+        previewImage.src = URL.createObjectURL(file);
+    }
+});
+
+async function runOCR(){
+
+    const file = imageInput.files[0];
+
+    if(!file){
+        alert("Vui lòng chọn ảnh");
+        return;
+    }
 
     const formData = new FormData();
-    formData.append("file", file);
+    formData.append("image", file);
 
-    const response = await fetch(`${API_URL}/ocr`, {
-        method: "POST",
-        body: formData
-    });
+    try{
 
-    const data = await response.json();
+        const response = await fetch(
+            "dia chi server",
+            {
+                method: "POST",
+                body: formData
+            }
+        );
 
-    console.log("OCR RESPONSE:", data);
+        const data = await response.json();
 
-    resultBox.value = data.text || data.error || "Không có kết quả";
+        document.getElementById("result").value =
+            data.text;
+
+    }
+    catch(error){
+        console.error(error);
+        alert("Lỗi kết nối server");
+    }
 }
