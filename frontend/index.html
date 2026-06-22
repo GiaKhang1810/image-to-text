@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>OCR Demo</title>
+    <link rel="stylesheet" href="thietke.css">
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>📸 OCR Image Recognition</h1>
+
+    <input type="file" id="imageInput" accept="image/*">
+
+    <div class="preview-box">
+        <img id="previewImage" />
+    </div>
+
+    <button onclick="runOCR()">Run OCR</button>
+
+    <h3>Kết quả:</h3>
+    <textarea id="result" readonly></textarea>
+
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
