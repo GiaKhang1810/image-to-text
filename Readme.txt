@@ -1,0 +1,1 @@
+There's nothing here, its only the frontend html code (CSS was put inside for better file organizing)
