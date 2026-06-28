@@ -1,7 +1,7 @@
 
 const HISTORY_KEY  = "billscan_history";
 const SERVER_KEY   = "billscan_server_url";
-const DEFAULT_URL  = "https://b4lztp3f-8000.asse.devtunnels.ms/";   // Relative URL — hoạt động khi frontend cùng domain với server
+const DEFAULT_URL  = "";   // Relative URL — hoạt động khi frontend cùng domain với server
 
 /* ─── Server URL helpers ──────────────────────────────────────────── */
 function getServerUrl() {
@@ -282,6 +282,35 @@ async function runOCR() {
 }
 
 /* ─── Render bảng kết quả ─────────────────────────────────────────── */
+function parsePrice(str) {
+    if (!str) return 0;
+    return parseInt(str.replace(/[^\d]/g, "")) || 0;
+}
+
+function formatPrice(num) {
+    return num.toLocaleString("vi-VN") + " VND";
+}
+
+function recalcTong() {
+    const items = window._currentItems;
+    if (!items) return;
+    let tong = 0;
+    items.forEach((item, i) => {
+        const thanh = parsePrice(item.gia) * (item.so_luong || 1);
+        tong += thanh;
+        const el = document.getElementById("thanh-tien-" + i);
+        if (el) el.textContent = thanh ? formatPrice(thanh) : "—";
+    });
+    const tongEl = document.getElementById("tong-cuoi");
+    if (tongEl && tong) tongEl.textContent = formatPrice(tong);
+}
+
+function updateSoLuong(index, val) {
+    if (!window._currentItems) return;
+    window._currentItems[index].so_luong = Math.max(1, parseInt(val) || 1);
+    recalcTong();
+}
+
 function renderParsedTable(items, tong, ngay_hoadon) {
     const container = document.getElementById("parsed-content");
 
@@ -297,25 +326,52 @@ function renderParsedTable(items, tong, ngay_hoadon) {
         return;
     }
 
-    const rows = items.map((item, i) => `
-        <tr>
+    // Lưu bản sao để updateSoLuong dùng
+    window._currentItems = items.map(it => ({ ...it, so_luong: it.so_luong || 1 }));
+
+    let tongTinh = 0;
+
+    const rows = window._currentItems.map((item, i) => {
+        const donGia = parsePrice(item.gia);
+        const thanh  = donGia * item.so_luong;
+        tongTinh += thanh;
+        return `<tr>
             <td><span style="color:var(--gray);font-size:.72rem;font-weight:700">${i + 1}</span></td>
             <td><span class="badge-mon">${escHtml(item.mon || "—")}</span></td>
+            <td style="text-align:center">
+                <input type="number" min="1" value="${item.so_luong}"
+                    style="width:50px;text-align:center;border:1.5px solid var(--border);
+                           border-radius:6px;padding:3px 4px;font-size:.82rem;background:white"
+                    onchange="updateSoLuong(${i}, this.value)" />
+            </td>
             <td><span class="badge-gia">${escHtml(item.gia || "—")}</span></td>
+            <td><span class="badge-gia" id="thanh-tien-${i}">${thanh ? formatPrice(thanh) : "—"}</span></td>
             <td style="color:var(--gray);font-size:.78rem">${escHtml(item.ngay || "—")}</td>
-        </tr>`).join("");
+        </tr>`;
+    }).join("");
 
-    const totRow = tong ? `
+    const tongHienThi = tong || (tongTinh ? formatPrice(tongTinh) : "");
+    const totRow = tongHienThi ? `
         <tr style="background:var(--blue-light)">
-            <td colspan="2" style="font-weight:800;font-size:.8rem;color:var(--blue)">TỔNG CỘNG</td>
-            <td colspan="2"><span class="badge-gia" style="background:#c8e6c9">${escHtml(tong)}</span></td>
+            <td colspan="3" style="font-weight:800;font-size:.8rem;color:var(--blue)">
+                TỔNG CỘNG (${items.length} món)
+            </td>
+            <td colspan="3">
+                <span class="badge-gia" id="tong-cuoi" style="background:#c8e6c9">
+                    ${escHtml(tongHienThi)}
+                </span>
+            </td>
         </tr>` : "";
 
     container.innerHTML = summary + `
         <table class="parsed-table">
             <thead><tr>
                 <th style="width:32px">#</th>
-                <th>Tên món</th><th>Giá tiền</th><th>Ngày</th>
+                <th>Tên món</th>
+                <th style="width:60px;text-align:center">SL</th>
+                <th>Đơn giá</th>
+                <th>Thành tiền</th>
+                <th>Ngày</th>
             </tr></thead>
             <tbody>${rows}${totRow}</tbody>
         </table>`;
@@ -348,18 +404,23 @@ function copyText() {
 }
 
 function exportCSV() {
-    const history = loadHistory();
-    const latest  = history[0];
-    let csv = "\uFEFF\"#\",\"Tên món\",\"Giá tiền\",\"Ngày\"\n";
-    if (latest?.parsedItems?.length) {
-        latest.parsedItems.forEach((item, i) => {
-            csv += [i+1, item.mon||"", item.gia||"", item.ngay||""]
+    const items = window._currentItems;
+    let csv = "\uFEFF\"#\",\"Tên món\",\"Số lượng\",\"Đơn giá\",\"Thành tiền\",\"Ngày\"\n";
+    if (items?.length) {
+        let tongTinh = 0;
+        items.forEach((item, i) => {
+            const sl    = item.so_luong || 1;
+            const don   = parsePrice(item.gia);
+            const thanh = don * sl;
+            tongTinh += thanh;
+            csv += [i+1, item.mon||"", sl, item.gia||"", thanh ? formatPrice(thanh) : "", item.ngay||""]
                 .map(v => `"${String(v).replace(/"/g,'""')}"`)
                 .join(",") + "\n";
         });
+        csv += `"","TỔNG CỘNG","","","${formatPrice(tongTinh)}",""\n`;
     } else {
         const raw = document.getElementById("raw-text").textContent;
-        csv += `"1","${raw.replace(/"/g,'""')}","",""\n`;
+        csv += `"1","${raw.replace(/"/g,'""')}","","","",""\n`;
     }
     const a = document.createElement("a");
     a.href     = "data:text/csv;charset=utf-8," + encodeURIComponent(csv);
