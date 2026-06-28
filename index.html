@@ -1,480 +1,313 @@
-cat > /mnt/user-data/outputs/index.html << 'HTMLEOF'
 <!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="https://nhandangvanbanocr69.com">
-    <title>BillScan - Quét hóa đơn AI</title>
-    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <title>BillScan Quét Hóa Đơn AI</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/x-icon" href="scantext.ico">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Sans:wght@400;700;900&display=swap');
-
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        :root {
-            --blue: #0066cc;
-            --blue-dark: #0052a3;
-            --white: #ffffff;
-            --bg-light: #f8f9fa;
-            --black: #1a1a1a;
-            --gray: #6c757d;
-            --red: #dc3545;
-            --border: #e2e8f0;
+        /* ── Server config modal ──────────────────────────────────── */
+        #server-overlay {
+            position: fixed; inset: 0;
+            background: rgba(22,33,62,.5);
+            backdrop-filter: blur(3px);
+            z-index: 200;
+            display: flex; align-items: center; justify-content: center;
         }
-        body { background: var(--white); font-family: 'Noto Sans', sans-serif; color: var(--black); min-height: 100vh; overflow-x: hidden; }
-
-        header { background: var(--bg-light); padding: 0 28px; display: flex; align-items: center; justify-content: space-between; height: 56px; border-bottom: 2px solid var(--blue); }
-        .logo { font-family: 'Bebas Neue', sans-serif; font-size: 1.8rem; color: var(--blue); letter-spacing: .12em; display: flex; align-items: center; gap: 10px; }
-        .logo-dot { width: 10px; height: 10px; background: var(--blue); border-radius: 50%; display: inline-block; }
-        .nav-btn { background: none; border: none; border-left: 1px solid var(--border); color: var(--gray); font-size: .75rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; padding: 0 18px; height: 56px; cursor: pointer; transition: color .15s, background .15s; }
-        .nav-btn:hover, .nav-btn.active { color: var(--blue); background: #edf2f7; }
-
-        .page { display: grid; grid-template-columns: 220px 1fr; min-height: calc(100vh - 56px); }
-
-        .sidebar { background: var(--bg-light); border-right: 2px solid var(--border); padding: 28px 0; display: flex; flex-direction: column; gap: 4px; }
-        .sidebar-label { font-size: .65rem; font-weight: 900; letter-spacing: .18em; text-transform: uppercase; color: var(--gray); padding: 0 20px 10px; }
-        .sidebar-item { display: flex; align-items: center; gap: 12px; padding: 12px 20px; color: var(--gray); font-size: .82rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; cursor: pointer; border-left: 3px solid transparent; transition: all .15s; }
-        .sidebar-item:hover { color: var(--blue); background: #edf2f7; }
-        .sidebar-item.active { color: var(--blue); background: #edf2f7; border-left-color: var(--blue); }
-        .sidebar-icon { width: 20px; height: 20px; border: 2px solid currentColor; border-radius: 3px; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 900; flex-shrink: 0; }
-
-        .main { background: var(--white); padding: 32px 36px; }
-        .screen { display: none; }
-        .screen.active { display: block; }
-
-        .page-eyebrow { font-size: .7rem; font-weight: 900; letter-spacing: .2em; text-transform: uppercase; color: var(--gray); margin-bottom: 4px; }
-        .page-heading { font-family: 'Arial', sans-serif; font-size: 3.52rem; line-height: .95; color: var(--black); letter-spacing: .12em; margin-bottom: 28px; font-weight: 900; text-transform: uppercase; }
-        .page-heading span { color: var(--blue); }
-        .accent-stripe { height: 6px; background: repeating-linear-gradient(-45deg, var(--blue) 0px, var(--blue) 6px, var(--white) 6px, var(--white) 12px); margin-bottom: 20px; }
-
-        .card { background: var(--white); border: 2px solid var(--blue); margin-bottom: 20px; }
-        .card-header { background: var(--bg-light); padding: 10px 18px; display: flex; align-items: center; gap: 8px; border-bottom: 2px solid var(--border); }
-        .card-label { font-size: .68rem; font-weight: 900; letter-spacing: .18em; text-transform: uppercase; color: var(--blue); }
-        .card-num { font-family: 'Bebas Neue', sans-serif; font-size: .9rem; color: var(--gray); letter-spacing: .1em; margin-right: 4px; }
-        .card-body { padding: 20px 18px; }
-
-        #dropzone { border: 2px dashed var(--blue); padding: 36px 20px; text-align: center; cursor: pointer; transition: border-color .2s, background .2s; position: relative; }
-        #dropzone:hover, #dropzone.drag-over { border-color: var(--blue-dark); background: var(--bg-light); }
-        #dropzone input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
-        .drop-icon-box { width: 52px; height: 52px; border: 3px solid var(--blue); color: var(--blue); display: flex; align-items: center; justify-content: center; margin: 0 auto 14px; font-size: 1.4rem; }
-        .drop-title { font-family: 'Bebas Neue', sans-serif; font-size: 1.3rem; letter-spacing: .1em; color: var(--black); margin-bottom: 4px; }
-        .drop-sub { font-size: .75rem; color: var(--gray); letter-spacing: .06em; }
-        .drop-sub strong { color: var(--blue); }
-
-        .file-row { display: none; align-items: center; gap: 10px; background: var(--bg-light); border: 1px solid var(--border); padding: 10px 14px; margin-top: 14px; }
-        .file-row-name { flex: 1; font-size: .82rem; color: var(--black); font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .remove-btn { background: none; border: none; color: var(--gray); font-size: .9rem; cursor: pointer; padding: 2px 6px; }
-        .remove-btn:hover { color: var(--red); }
-
-        #preview-wrap { display: none; margin-top: 14px; border: 2px solid var(--border); overflow: hidden; text-align: center; background: var(--bg-light); }
-        #preview-wrap img { max-width: 100%; max-height: 220px; display: block; margin: 0 auto; object-fit: contain; }
-
-        #scan-btn { width: 100%; background: var(--blue); color: var(--white); border: none; padding: 16px; font-family: 'Bebas Neue', sans-serif; font-size: 1.4rem; letter-spacing: .14em; cursor: pointer; transition: background .15s, transform .1s; }
-        #scan-btn:hover:not(:disabled) { background: var(--blue-dark); transform: translateY(-1px); }
-        #scan-btn:disabled { background: var(--border); color: var(--gray); cursor: not-allowed; transform: none; }
-
-        #error-box { display: none; background: #fff5f5; border-left: 4px solid var(--red); padding: 12px 16px; font-size: .82rem; color: var(--red); margin-top: 14px; }
-
-        #result { display: none; margin-top: 20px; }
-        .result-header { background: var(--blue); padding: 10px 18px; display: flex; align-items: center; gap: 8px; }
-        .result-label { font-family: 'Bebas Neue', sans-serif; font-size: 1.1rem; letter-spacing: .12em; color: var(--white); }
-        .result-badge { background: var(--white); color: var(--blue); font-size: .65rem; font-weight: 900; letter-spacing: .1em; text-transform: uppercase; padding: 2px 8px; margin-left: auto; }
-        #raw-text-wrap { background: var(--bg-light); padding: 20px 18px; border: 2px solid var(--blue); border-top: none; }
-        #raw-text { font-family: 'Courier New', monospace; font-size: .88rem; color: var(--black); white-space: pre-wrap; word-break: break-word; line-height: 1.75; min-height: 80px; }
-        .action-row { display: flex; border: 2px solid var(--blue); border-top: none; }
-        .action-btn { flex: 1; padding: 13px 10px; background: var(--white); border: none; border-right: 1px solid var(--border); color: var(--gray); font-size: .72rem; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; cursor: pointer; transition: background .15s, color .15s; }
-        .action-btn:last-child { border-right: none; }
-        .action-btn:hover { background: var(--bg-light); color: var(--blue); }
-        .action-btn.excel:hover { color: #2e7d32; }
-        .action-btn.reload:hover { color: var(--red); }
-
-        .api-row { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
-        .api-label { font-size: .65rem; font-weight: 900; letter-spacing: .14em; text-transform: uppercase; color: var(--gray); white-space: nowrap; }
-        .api-input { flex: 1; background: var(--white); border: 1px solid var(--border); color: var(--black); font-family: 'Courier New', monospace; font-size: .78rem; padding: 8px 12px; outline: none; transition: border-color .2s; }
-        .api-input:focus { border-color: var(--blue); }
-        .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--gray); flex-shrink: 0; transition: background .3s; }
-        .status-dot.online { background: #2e7d32; }
-        .status-dot.offline { background: var(--red); }
-
-        .history-toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
-        .history-count { font-size: .75rem; font-weight: 700; color: var(--black); letter-spacing: .08em; opacity: .6; }
-        .clear-btn { background: none; border: 1px solid var(--red); color: var(--red); font-size: .68rem; font-weight: 900; letter-spacing: .1em; text-transform: uppercase; padding: 5px 12px; cursor: pointer; transition: background .15s, color .15s; }
-        .clear-btn:hover { background: var(--red); color: var(--white); }
-        .history-empty { background: var(--bg-light); border: 2px dashed var(--border); padding: 40px; text-align: center; color: var(--gray); font-family: 'Bebas Neue', sans-serif; font-size: 1.1rem; letter-spacing: .1em; }
-        .history-list { display: flex; flex-direction: column; gap: 8px; }
-        .history-item { background: var(--white); border: 1px solid var(--border); border-left: 4px solid var(--blue); display: grid; grid-template-columns: auto 1fr auto; align-items: start; gap: 14px; padding: 14px 16px; cursor: pointer; transition: border-color .15s, background .15s; }
-        .history-item:hover { border-left-color: var(--blue-dark); background: var(--bg-light); }
-        .history-thumb { width: 48px; height: 48px; object-fit: cover; border: 1px solid var(--border); flex-shrink: 0; }
-        .history-thumb-placeholder { width: 48px; height: 48px; background: var(--bg-light); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0; }
-        .history-info { min-width: 0; }
-        .history-filename { font-size: .82rem; font-weight: 700; color: var(--black); letter-spacing: .04em; margin-bottom: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .history-preview { font-family: 'Courier New', monospace; font-size: .75rem; color: var(--gray); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .history-meta { text-align: right; flex-shrink: 0; }
-        .history-time { font-size: .68rem; color: var(--gray); letter-spacing: .04em; }
-        .history-del { display: block; margin-top: 6px; background: none; border: none; color: var(--gray); font-size: .75rem; cursor: pointer; }
-        .history-del:hover { color: var(--red); }
-
-        .detail-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 100; align-items: center; justify-content: center; }
-        .detail-overlay.open { display: flex; }
-        .detail-box { background: var(--white); border: 2px solid var(--blue); width: 90%; max-width: 540px; max-height: 80vh; display: flex; flex-direction: column; }
-        .detail-head { background: var(--bg-light); padding: 12px 18px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); }
-        .detail-title { font-family: 'Bebas Neue', sans-serif; font-size: 1rem; letter-spacing: .1em; color: var(--blue); }
-        .detail-close { background: none; border: none; color: var(--gray); font-size: 1.2rem; cursor: pointer; }
-        .detail-close:hover { color: var(--red); }
-        .detail-body { padding: 18px; overflow-y: auto; flex: 1; }
-        .detail-text { font-family: 'Courier New', monospace; font-size: .85rem; color: var(--black); white-space: pre-wrap; word-break: break-word; line-height: 1.75; }
-        .detail-foot { padding: 12px 18px; border-top: 1px solid var(--border); display: flex; gap: 8px; }
-        .detail-btn { flex: 1; padding: 10px; background: var(--white); border: 1px solid var(--border); color: var(--gray); font-size: .72rem; font-weight: 900; letter-spacing: .1em; text-transform: uppercase; cursor: pointer; transition: color .15s, background .15s; }
-        .detail-btn:hover { color: var(--blue); background: var(--bg-light); }
-
-        @media (max-width: 680px) {
-            .page { grid-template-columns: 1fr; }
-            .sidebar { display: none; }
-            .main { padding: 20px 16px; }
-            .page-heading { font-size: 2.42rem; }
+        #server-overlay.hidden { display: none; }
+        .smodal-box {
+            background: var(--white);
+            border-radius: 14px;
+            width: 90%; max-width: 420px;
+            box-shadow: 0 20px 50px rgba(0,0,0,.2);
+            overflow: hidden;
         }
+        .smodal-head {
+            background: var(--blue); padding: 18px 22px;
+        }
+        .smodal-head-title {
+            font-family: var(--font-display);
+            font-size: 1.2rem; font-weight: 800; color: white; margin-bottom: 3px;
+        }
+        .smodal-head-sub { font-size: .75rem; color: rgba(255,255,255,.75); }
+        .smodal-body { padding: 22px; }
+        .smodal-label {
+            display: block; font-size: .68rem; font-weight: 800;
+            letter-spacing: .14em; text-transform: uppercase;
+            color: var(--gray); margin-bottom: 8px;
+        }
+        .smodal-input {
+            width: 100%;
+            background: var(--bg-light);
+            border: 1.5px solid var(--border); border-radius: 8px;
+            padding: 11px 13px;
+            font-family: 'Courier New', monospace; font-size: .82rem;
+            color: var(--black); outline: none;
+            transition: border-color .2s; margin-bottom: 6px;
+        }
+        .smodal-input:focus { border-color: var(--blue); }
+        .smodal-hint { font-size: .7rem; color: var(--gray); margin-bottom: 18px; }
+        .smodal-hint code {
+            background: var(--bg-light); padding: 1px 5px;
+            border-radius: 3px; font-size: .78rem;
+        }
+        .smodal-actions { display: flex; gap: 8px; }
+        .smodal-btn {
+            flex: 1; padding: 11px;
+            border-radius: 8px; border: none;
+            font-family: var(--font-display); font-size: .9rem; font-weight: 700;
+            cursor: pointer; transition: background .15s;
+        }
+        .smodal-btn.primary { background: var(--blue); color: white; }
+        .smodal-btn.primary:hover { background: var(--blue-dark); }
+        .smodal-btn.secondary {
+            background: var(--bg-light); color: var(--gray);
+            border: 1.5px solid var(--border);
+        }
+        .smodal-btn.secondary:hover { color: var(--blue); border-color: var(--blue); }
+
+        /* ── Server badge in header ───────────────────────────────── */
+        #server-badge {
+            display: flex; align-items: center; gap: 7px;
+            font-size: .72rem; font-weight: 700; color: var(--gray);
+            cursor: pointer;
+            border: 1.5px solid var(--border); border-radius: 6px;
+            padding: 5px 11px;
+            transition: color .15s, border-color .15s;
+        }
+        #server-badge:hover { color: var(--blue); border-color: var(--blue); }
+
+        /* ── Result tabs ──────────────────────────────────────────── */
+        .result-tabs {
+            display: flex;
+            border: 1.5px solid var(--border); border-top: none;
+        }
+        .result-tab {
+            flex: 1; padding: 10px;
+            background: var(--white); border: none;
+            border-right: 1px solid var(--border);
+            color: var(--gray);
+            font-family: var(--font-body); font-size: .76rem; font-weight: 700;
+            cursor: pointer; transition: background .15s, color .15s;
+        }
+        .result-tab:last-child { border-right: none; }
+        .result-tab.active { background: var(--blue-light); color: var(--blue); }
+        .result-tab:hover:not(.active) { background: var(--bg-light); }
+        .result-panel { display: none; }
+        .result-panel.active { display: block; }
+
+        /* ── Parsed table ─────────────────────────────────────────── */
+        #parsed-wrap {
+            background: var(--bg-light);
+            border: 1.5px solid var(--border); border-top: none;
+            padding: 16px 18px;
+        }
+        .parsed-table-title {
+            font-size: .68rem; font-weight: 800;
+            letter-spacing: .14em; text-transform: uppercase;
+            color: var(--blue); margin-bottom: 10px;
+        }
+        .parsed-table {
+            width: 100%; border-collapse: collapse; font-size: .82rem;
+        }
+        .parsed-table th {
+            background: var(--blue); color: white;
+            font-size: .68rem; font-weight: 800;
+            letter-spacing: .1em; text-transform: uppercase;
+            padding: 8px 12px; text-align: left;
+        }
+        .parsed-table th:first-child { border-radius: 6px 0 0 0; }
+        .parsed-table th:last-child  { border-radius: 0 6px 0 0; }
+        .parsed-table td {
+            padding: 9px 12px;
+            border-bottom: 1px solid var(--border);
+            color: var(--black); vertical-align: top;
+        }
+        .parsed-table tr:last-child td { border-bottom: none; }
+        .parsed-table tr:nth-child(even) td { background: white; }
+        .badge-mon {
+            background: #e8f0fb; color: var(--blue);
+            font-weight: 700; border-radius: 4px; padding: 2px 8px; display: inline-block;
+        }
+        .badge-gia {
+            background: #e8f5e9; color: var(--green);
+            font-weight: 700; border-radius: 4px; padding: 2px 8px;
+            display: inline-block; font-family: 'Courier New', monospace;
+        }
+        .parsed-empty {
+            text-align: center; color: var(--gray); font-size: .8rem; padding: 16px 0;
+        }
+
+        /* ── Skeleton loading ─────────────────────────────────────── */
+        @keyframes shimmer {
+            0%   { background-position: -400px 0; }
+            100% { background-position:  400px 0; }
+        }
+        .skeleton {
+            border-radius: 4px; height: 14px; margin-bottom: 8px;
+            background: linear-gradient(90deg, #e8f0fb 25%, #cfe0f7 50%, #e8f0fb 75%);
+            background-size: 400px 100%;
+            animation: shimmer 1.2s infinite;
+        }
+        .skeleton.w80 { width: 80%; }
+        .skeleton.w60 { width: 60%; }
+        .skeleton.w45 { width: 45%; }
     </style>
 </head>
 <body>
 
+<!-- ── Server config modal ─────────────────────────────────────────── -->
+<div id="server-overlay" class="hidden">
+    <div class="smodal-box">
+        <div class="smodal-head">
+            <div class="smodal-head-title">⚙ Cấu hình Server</div>
+            <div class="smodal-head-sub">Địa chỉ FastAPI server đang chạy OCR.</div>
+        </div>
+        <div class="smodal-body">
+            <label class="smodal-label" for="server-url-input">URL Server</label>
+            <input class="smodal-input" id="server-url-input" type="text"
+                   placeholder="https://your-app.railway.app" spellcheck="false" />
+            <div class="smodal-hint">
+                Ví dụ: <code>https://billscan.railway.app</code><br>
+                Để trống = dùng <code>/ocr</code> (cùng domain với frontend).
+            </div>
+            <div class="smodal-actions">
+                <button class="smodal-btn secondary" onclick="hideServerModal()">Hủy</button>
+                <button class="smodal-btn primary"   onclick="saveServerModal()">Lưu & Kết nối</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ── Header ──────────────────────────────────────────────────────── -->
 <header>
-    <div class="logo"><div class="logo-dot"></div>BILLSCAN</div>
-    <nav style="display:flex">
-        <button class="nav-btn active" id="nav-scan" onclick="showScreen('scan')">Quét</button>
-        <button class="nav-btn" id="nav-history" onclick="showScreen('history')">Lịch sử</button>
-    </nav>
+    <div class="logo">
+        <div class="logo-icon">🧾</div>
+        BillScan
+    </div>
+    <div style="display:flex;align-items:center;gap:10px">
+        <div id="server-badge" onclick="showServerModal()" title="Đổi server URL">
+            <div class="status-dot" id="server-dot"></div>
+            <span id="server-label">/ocr</span>
+        </div>
+        <nav style="display:flex">
+            <button class="nav-btn active" id="nav-scan"    onclick="showScreen('scan')">Quét</button>
+            <button class="nav-btn"        id="nav-history" onclick="showScreen('history')">Lịch sử</button>
+        </nav>
+    </div>
 </header>
 
+<!-- ── Page ────────────────────────────────────────────────────────── -->
 <div class="page">
     <aside class="sidebar">
-        <div class="sidebar-label">Menu</div>
-        <div class="sidebar-item active" id="sb-scan" onclick="showScreen('scan')">
-            <div class="sidebar-icon">S</div>Quét bill
+        <div class="sidebar-label">Menu chính</div>
+        <div class="sidebar-item active" id="sb-scan"    onclick="showScreen('scan')">
+            <div class="sidebar-icon">📷</div> Quét hóa đơn
         </div>
-        <div class="sidebar-item" id="sb-history" onclick="showScreen('history')">
-            <div class="sidebar-icon">H</div>Lịch sử
+        <div class="sidebar-item"        id="sb-history" onclick="showScreen('history')">
+            <div class="sidebar-icon">🕐</div> Lịch sử quét
         </div>
     </aside>
 
     <main class="main">
 
+        <!-- Scan screen -->
         <div class="screen active" id="screen-scan">
-            <div class="page-eyebrow">OCR</div>
-            <div class="page-heading">nhận dạng văn bản<br><span>từ hình ảnh</span></div>
+            <div class="page-eyebrow">EasyOCR / Tesseract · Python Server</div>
+            <div class="page-heading">Quét <span>Hóa Đơn</span><br>Bằng AI</div>
+            <p class="page-sub">Tải ảnh hóa đơn lên — server Python sẽ xử lý và trích xuất nội dung cho bạn.</p>
             <div class="accent-stripe"></div>
 
-            <div class="card" style="display: none;">
-                <div class="card-header"><span class="card-num">01</span><span class="card-label">Cấu hình API</span></div>
-                <div class="card-body">
-                    <div class="api-row">
-                        <span class="api-label">Endpoint</span>
-                        <input class="api-input" id="api-url" type="text" value="http://localhost:8000/ocr" spellcheck="false" />
-                        <div class="status-dot" id="status-dot"></div>
-                    </div>
-                </div>
-            </div>
-
             <div class="card">
-                <div class="card-header"><span class="card-num">01</span><span class="card-label">Tải ảnh lên</span></div>
+                <div class="card-header">
+                    <span class="card-label">📎 Tải ảnh hóa đơn lên</span>
+                </div>
                 <div class="card-body">
                     <div id="dropzone">
-                        <input type="file" id="file-input" accept="image/*,.pdf" />
-                        <div class="drop-icon-box">↑</div>
-                        <div class="drop-title">KÉO THẢ ẢNH VÀO ĐÂY</div>
-                        <div class="drop-sub">hỗ trợ tất cả loại ảnh &nbsp;|&nbsp; <strong>tối đa 10MB</strong></div>
+                        <input type="file" id="file-input" accept="image/*" />
+                        <div class="drop-icon-box">⬆</div>
+                        <div class="drop-title">Kéo thả ảnh vào đây</div>
+                        <div class="drop-sub">Hỗ trợ JPG, PNG, WEBP &nbsp;|&nbsp; <strong>tối đa 10 MB</strong></div>
                     </div>
                     <div class="file-row" id="file-box">
-                        <span style="font-size:1.1rem">🖼</span>
+                        <span style="font-size:1.2rem">🖼</span>
                         <span class="file-row-name" id="file-name">—</span>
                         <button class="remove-btn" onclick="removeFile()">✕</button>
                     </div>
-                    <div id="preview-wrap"><img id="preview-img" src="" alt="Xem trước" /></div>
+                    <div id="preview-wrap">
+                        <img id="preview-img" src="" alt="Xem trước" />
+                    </div>
                 </div>
             </div>
 
             <div id="error-box"></div>
 
-            <button id="scan-btn" disabled onclick="runOCR()">⬡ &nbsp;QUÉT &amp; PHÂN TÍCH</button>
+            <button id="scan-btn" disabled onclick="runOCR()">
+                ⬡ &nbsp;Quét &amp; Phân Tích
+            </button>
 
             <div class="card" id="result">
                 <div class="result-header">
-                    <span class="result-label">KẾT QUẢ NHẬN DẠNG</span>
-                    <span class="result-badge">OCR</span>
+                    <span class="result-label">Kết quả nhận dạng</span>
+                    <span class="result-badge" id="result-badge">OCR</span>
                 </div>
-                <div id="raw-text-wrap"><pre id="raw-text"></pre></div>
+                <div class="result-tabs">
+                    <button class="result-tab active" id="tab-table" onclick="switchTab('table')">📊 Dạng bảng</button>
+                    <button class="result-tab"        id="tab-raw"   onclick="switchTab('raw')">📄 Văn bản gốc</button>
+                </div>
+                <div class="result-panel active" id="panel-table">
+                    <div id="parsed-wrap">
+                        <div class="parsed-table-title">Thông tin trích xuất</div>
+                        <div id="parsed-content"></div>
+                    </div>
+                </div>
+                <div class="result-panel" id="panel-raw">
+                    <div id="raw-text-wrap">
+                        <pre id="raw-text"></pre>
+                    </div>
+                </div>
                 <div class="action-row">
-                    <button class="action-btn" onclick="copyText()">Sao chép</button>
-                    <button class="action-btn excel" onclick="exportExcel()">Xuất Excel</button>
-                    <button class="action-btn reload" onclick="resetAll()">Quét lại</button>
+                    <button class="action-btn"        onclick="copyText()">📋 Sao chép</button>
+                    <button class="action-btn excel"  onclick="exportCSV()">📊 Xuất CSV</button>
+                    <button class="action-btn reload" onclick="resetAll()">🔄 Quét lại</button>
                 </div>
             </div>
         </div>
 
+        <!-- History screen -->
         <div class="screen" id="screen-history">
             <div class="page-eyebrow">Lưu trữ cục bộ</div>
-            <div class="page-heading">LỊCH SỬ<br><span>QUÉT.</span></div>
+            <div class="page-heading">Lịch Sử <span>Quét</span></div>
+            <p class="page-sub">Tất cả hóa đơn bạn đã quét trong trình duyệt này.</p>
             <div class="accent-stripe"></div>
-
             <div class="history-toolbar">
                 <span class="history-count" id="history-count">0 mục</span>
                 <button class="clear-btn" onclick="clearHistory()">Xóa tất cả</button>
             </div>
-
             <div id="history-list"></div>
         </div>
 
     </main>
 </div>
 
+<!-- ── Detail modal ─────────────────────────────────────────────────── -->
 <div class="detail-overlay" id="detail-overlay" onclick="closeDetail(event)">
     <div class="detail-box">
         <div class="detail-head">
             <span class="detail-title" id="detail-title">—</span>
             <button class="detail-close" onclick="closeDetail()">✕</button>
         </div>
-        <div class="detail-body"><pre class="detail-text" id="detail-text"></pre></div>
+        <div class="detail-body">
+            <pre class="detail-text" id="detail-text"></pre>
+        </div>
         <div class="detail-foot">
-            <button class="detail-btn" onclick="copyDetail()">Sao chép</button>
+            <button class="detail-btn" onclick="copyDetail()">📋 Sao chép</button>
             <button class="detail-btn" onclick="closeDetail()">Đóng</button>
         </div>
     </div>
 </div>
 
-<script>
-const HISTORY_KEY = "billscan_history";
-
-function loadHistory() {
-    try { return JSON.parse(localStorage.getItem(HISTORY_KEY)) || []; }
-    catch { return []; }
-}
-
-function saveHistory(list) {
-    localStorage.setItem(HISTORY_KEY, JSON.stringify(list));
-}
-
-function addToHistory(filename, text, thumbDataUrl) {
-    const list = loadHistory();
-    list.unshift({
-        id: Date.now(),
-        filename,
-        text,
-        thumb: thumbDataUrl || null,
-        time: new Date().toLocaleString("vi-VN"),
-    });
-    if (list.length > 50) list.splice(50);
-    saveHistory(list);
-}
-
-function clearHistory() {
-    if (!confirm("Xóa toàn bộ lịch sử?")) return;
-    localStorage.removeItem(HISTORY_KEY);
-    renderHistory();
-}
-
-function deleteHistoryItem(id) {
-    const list = loadHistory().filter(i => i.id !== id);
-    saveHistory(list);
-    renderHistory();
-}
-
-function renderHistory() {
-    const list = loadHistory();
-    const el = document.getElementById("history-list");
-    document.getElementById("history-count").textContent = list.length + " mục";
-
-    if (list.length === 0) {
-        el.innerHTML = '<div class="history-empty">CHƯA CÓ LỊCH SỬ NÀO</div>';
-        return;
-    }
-
-    el.innerHTML = list.map(item => `
-        <div class="history-item" onclick="openDetail(${item.id})">
-            ${item.thumb
-                ? `<img class="history-thumb" src="${item.thumb}" alt="" />`
-                : `<div class="history-thumb-placeholder">🖼</div>`}
-            <div class="history-info">
-                <div class="history-filename">${item.filename}</div>
-                <div class="history-preview">${item.text.slice(0, 80)}${item.text.length > 80 ? "…" : ""}</div>
-            </div>
-            <div class="history-meta">
-                <span class="history-time">${item.time}</span>
-                <button class="history-del" onclick="event.stopPropagation(); deleteHistoryItem(${item.id})">✕ xóa</button>
-            </div>
-        </div>
-    `).join("");
-}
-
-function openDetail(id) {
-    const item = loadHistory().find(i => i.id === id);
-    if (!item) return;
-    document.getElementById("detail-title").textContent = item.filename;
-    document.getElementById("detail-text").textContent = item.text;
-    document.getElementById("detail-overlay").classList.add("open");
-}
-
-function closeDetail(e) {
-    if (e && e.target !== document.getElementById("detail-overlay")) return;
-    document.getElementById("detail-overlay").classList.remove("open");
-}
-
-function copyDetail() {
-    navigator.clipboard.writeText(document.getElementById("detail-text").textContent).then(() => {
-        const btn = document.querySelector(".detail-btn");
-        btn.textContent = "✓ Đã sao chép";
-        setTimeout(() => btn.textContent = "Sao chép", 2000);
-    });
-}
-
-function showScreen(name) {
-    document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
-    document.querySelectorAll(".sidebar-item").forEach(s => s.classList.remove("active"));
-    document.querySelectorAll(".nav-btn").forEach(s => s.classList.remove("active"));
-
-    document.getElementById("screen-" + name).classList.add("active");
-    document.getElementById("sb-" + name).classList.add("active");
-    document.getElementById("nav-" + name).classList.add("active");
-
-    if (name === "history") renderHistory();
-}
-
-const apiUrlInput = document.getElementById("api-url");
-const statusDot   = document.getElementById("status-dot");
-
-async function pingApi() {
-    const base = apiUrlInput.value.replace(/\/ocr$/, "");
-    try {
-        const r = await fetch(base + "/health", { signal: AbortSignal.timeout(3000) });
-        statusDot.className = "status-dot " + (r.ok ? "online" : "offline");
-    } catch { statusDot.className = "status-dot offline"; }
-}
-apiUrlInput.addEventListener("change", pingApi);
-pingApi();
-setInterval(pingApi, 15000);
-
-let selectedFile = null;
-let thumbDataUrl  = null;
-
-const dropzone  = document.getElementById("dropzone");
-const fileInput = document.getElementById("file-input");
-
-dropzone.addEventListener("dragover", e => { e.preventDefault(); dropzone.classList.add("drag-over"); });
-dropzone.addEventListener("dragleave", () => dropzone.classList.remove("drag-over"));
-
-// ✅ ĐÃ SỬA BUG: truyền files[0] thay vì files
-dropzone.addEventListener("drop", e => {
-    e.preventDefault(); dropzone.classList.remove("drag-over");
-    if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
-});
-fileInput.addEventListener("change", () => { if (fileInput.files[0]) handleFile(fileInput.files[0]); });
-
-function handleFile(file) {
-    if (file.size > 10 * 1024 * 1024) { showError("File quá lớn. Tối đa 10MB."); return; }
-    selectedFile = file;
-    thumbDataUrl = null;
-    document.getElementById("file-name").textContent = file.name;
-    document.getElementById("file-box").style.display = "flex";
-    document.getElementById("scan-btn").disabled = false;
-    hideError();
-    document.getElementById("result").style.display = "none";
-
-    if (file.type.startsWith("image/")) {
-        const url = URL.createObjectURL(file);
-        document.getElementById("preview-img").src = url;
-        document.getElementById("preview-wrap").style.display = "block";
-        const reader = new FileReader();
-        reader.onload = e => {
-            const img = new Image();
-            img.onload = () => {
-                const canvas = document.createElement("canvas");
-                const scale = Math.min(80 / img.width, 80 / img.height, 1);
-                canvas.width = img.width * scale;
-                canvas.height = img.height * scale;
-                canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
-                thumbDataUrl = canvas.toDataURL("image/jpeg", 0.6);
-            };
-            img.src = e.target.result;
-        };
-        reader.readAsDataURL(file);
-    } else {
-        document.getElementById("preview-wrap").style.display = "none";
-    }
-}
-
-function removeFile() {
-    selectedFile = null; thumbDataUrl = null;
-    fileInput.value = "";
-    document.getElementById("file-box").style.display = "none";
-    document.getElementById("preview-wrap").style.display = "none";
-    document.getElementById("scan-btn").disabled = true;
-    document.getElementById("result").style.display = "none";
-    hideError();
-}
-
-async function runOCR() {
-    if (!selectedFile) return;
-    setLoading(true);
-    hideError();
-    document.getElementById("result").style.display = "none";
-
-    const formData = new FormData();
-    formData.append("file", selectedFile);
-
-    try {
-        const res = await fetch(apiUrlInput.value, { method: "POST", body: formData });
-        if (!res.ok) {
-            const err = await res.json().catch(() => ({ detail: res.statusText }));
-            throw new Error(err.detail || "HTTP " + res.status);
-        }
-        const data = await res.json();
-        const text = data.text || "(Không nhận ra văn bản)";
-
-        document.getElementById("raw-text").textContent = text;
-        document.getElementById("result").style.display = "block";
-        document.getElementById("result").scrollIntoView({ behavior: "smooth", block: "start" });
-
-        addToHistory(selectedFile.name, text, thumbDataUrl);
-
-    } catch (err) {
-        showError(err.message.includes("fetch") || err.message.includes("Failed")
-            ? "Không kết nối được server. Kiểm tra server đang chạy tại: " + apiUrlInput.value
-            : "Lỗi: " + err.message);
-    } finally {
-        setLoading(false);
-    }
-}
-
-function setLoading(on) {
-    const btn = document.getElementById("scan-btn");
-    btn.disabled = on;
-    btn.textContent = on ? "⏳  ĐANG XỬ LÝ..." : "⬡  QUÉT & PHÂN TÍCH";
-}
-
-function showError(msg) {
-    const el = document.getElementById("error-box");
-    el.textContent = "⚠ " + msg; el.style.display = "block";
-}
-function hideError() { document.getElementById("error-box").style.display = "none"; }
-
-function copyText() {
-    navigator.clipboard.writeText(document.getElementById("raw-text").textContent).then(() => {
-        const btn = document.querySelector(".action-btn");
-        btn.textContent = "✓ ĐÃ SAO CHÉP";
-        setTimeout(() => btn.textContent = "Sao chép", 2000);
-    });
-}
-
-function exportExcel() {
-    const text = document.getElementById("raw-text").textContent;
-    const a = document.createElement("a");
-    a.href = "data:text/csv;charset=utf-8,\uFEFF" + encodeURIComponent(text);
-    a.download = "billscan_" + Date.now() + ".csv";
-    a.click();
-}
-
-function resetAll() { removeFile(); window.scrollTo({ top: 0, behavior: "smooth" }); }
-</script>
-
+<script src="main.js"></script>
 </body>
 </html>
-
-HTMLEOF
