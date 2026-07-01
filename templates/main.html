@@ -313,30 +313,6 @@
 </head>
 
 <body>
-
-    <!-- ── Server config modal ─────────────────────────────────────────── -->
-    <div id="server-overlay" class="hidden">
-        <div class="smodal-box">
-            <div class="smodal-head">
-                <div class="smodal-head-title">⚙ Cấu hình Server</div>
-                <div class="smodal-head-sub">Địa chỉ FastAPI server đang chạy OCR.</div>
-            </div>
-            <div class="smodal-body">
-                <label class="smodal-label" for="server-url-input">URL Server</label>
-                <input class="smodal-input" id="server-url-input" type="text" placeholder="https://your-app.railway.app"
-                    spellcheck="false" />
-                <div class="smodal-hint">
-                    Ví dụ: <code>https://billscan.railway.app</code><br>
-                    Để trống = dùng <code>/ocr</code> (cùng domain với frontend).
-                </div>
-                <div class="smodal-actions">
-                    <button class="smodal-btn secondary" onclick="hideServerModal()">Hủy</button>
-                    <button class="smodal-btn primary" onclick="saveServerModal()">Lưu & Kết nối</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- ── Header ──────────────────────────────────────────────────────── -->
     <header>
         <div class="logo">
@@ -344,10 +320,6 @@
             BillScan
         </div>
         <div style="display:flex;align-items:center;gap:10px">
-            <div id="server-badge" onclick="showServerModal()" title="Đổi server URL">
-                <div class="status-dot" id="server-dot"></div>
-                <span id="server-label">/ocr</span>
-            </div>
             <nav style="display:flex">
                 <button class="nav-btn active" id="nav-scan" onclick="showScreen('scan')">Quét</button>
                 <button class="nav-btn" id="nav-history" onclick="showScreen('history')">Lịch sử</button>
